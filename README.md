@@ -55,4 +55,5 @@ The pure local modal-domain method directly matches local modal coefficients for
 <img width="2559" height="1221" alt="image" src="https://github.com/user-attachments/assets/a6df65fe-42e7-47c7-ad65-e2e1b987e653" />
 The local-pressure modal hybrid method replaces the inner bright boundary with four pressure control points while maintaining local modal matching for the outer bright boundary and dark zone.
 
+
 This implementation is a simplified local modal-domain approach rather than a full global modal-domain reproduction system. The goal is to examine whether local modal representations can provide efficient bright/dark zone control around a small personal listening region.
