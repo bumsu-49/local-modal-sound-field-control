@@ -28,8 +28,8 @@ This project implements a MATLAB-based simulation framework for multizone sound 
 
 - Pure local modal-domain sound field control
 - Local-pressure modal hybrid comparison model
-- Adaptive modal order based on $N = \lceil kR \rceil\$
-- Uniform CMP-style output constraint
+- Adaptive modal order trucation based on $N = \lceil kR \rceil\$
+- Uniform CMP-style output constraint(실측 바탕)
 - Wrapped phase error analysis
 - Gain-scaled reconstruction diagnostic
 - Representative frequency comparison at 100, 500, 1000, 1500, and 2000 Hz
@@ -40,12 +40,19 @@ Representative results are provided in the `results/figures` directory.
 
 The simulation compares target, raw reconstruction, and gain-scaled reconstruction across multiple representative frequencies. Wrapped phase error is also used to avoid misleading interpretation caused by phase unwrapping.
 
-<img width="2559" height="1219" alt="image" src="https://github.com/user-attachments/assets/4eaf3f2a-f02a-41be-bce3-a83d281c3b9d" />
+### Pure Local Modal Domain Method
 
 <img width="2552" height="1214" alt="image" src="https://github.com/user-attachments/assets/4ee69693-cd49-4299-ba53-07502901f8a8" />
-: pure local modal method result
+
+<img width="2559" height="1219" alt="image" src="https://github.com/user-attachments/assets/4eaf3f2a-f02a-41be-bce3-a83d281c3b9d" />
+The pure local modal-domain method directly matches local modal coefficients for the bright and dark zones.
+
+### Local-Pressure Modal Hybrid Method
+
+<img width="2109" height="1242" alt="image" src="https://github.com/user-attachments/assets/8c8c3748-7178-42d0-b8ec-bcf6ac1c8ac0" />
+
 
 <img width="2559" height="1221" alt="image" src="https://github.com/user-attachments/assets/a6df65fe-42e7-47c7-ad65-e2e1b987e653" />
+The local-pressure modal hybrid method replaces the inner bright boundary with four pressure control points while maintaining local modal matching for the outer bright boundary and dark zone.
 
-<img width="1132" height="1109" alt="image" src="https://github.com/user-attachments/assets/7a775ca8-cb58-4f04-a8d2-f28879381d8e" />
-: pressure local modal method result
+This implementation is a simplified local modal-domain approach rather than a full global modal-domain reproduction system. The goal is to examine whether local modal representations can provide efficient bright/dark zone control around a small personal listening region.
