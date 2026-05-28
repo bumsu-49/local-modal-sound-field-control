@@ -62,7 +62,6 @@ This implementation is a simplified local modal-domain approach rather than a fu
 matlab 코드 파일 실행을 위해선 'src/' 파일을 참고해주세요
 
 ### Pure Local Modal Domain Method
-```matlab
 run('src/pure_local_modal_domain_adaptive_cmp_multiband.m')
 
 ### Local-Pressure Modal Hybrid Method
