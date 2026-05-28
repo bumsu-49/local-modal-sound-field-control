@@ -57,3 +57,13 @@ The local-pressure modal hybrid method replaces the inner bright boundary with f
 
 
 This implementation is a simplified local modal-domain approach rather than a full global modal-domain reproduction system. The goal is to examine whether local modal representations can provide efficient bright/dark zone control around a small personal listening region.
+
+## 5. How to Run
+matlab 코드 파일 실행을 위해선 'src/' 파일을 참고해주세요
+
+### Pure Local Modal Domain Method
+```matlab
+run('src/pure_local_modal_domain_adaptive_cmp_multiband.m')
+
+### Local-Pressure Modal Hybrid Method
+run('src/local_pressure_modal_hybrid_adaptive_cmp_multiband.m')
