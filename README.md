@@ -28,7 +28,7 @@ This project implements a MATLAB-based simulation framework for multizone sound 
 
 - Pure local modal-domain sound field control
 - Local-pressure modal hybrid comparison model
-- Adaptive modal order based on \(N = \lceil kR \rceil\)
+- Adaptive modal order based on $N = \lceil kR \rceil\$
 - Uniform CMP-style output constraint
 - Wrapped phase error analysis
 - Gain-scaled reconstruction diagnostic
