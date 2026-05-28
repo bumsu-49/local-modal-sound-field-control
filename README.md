@@ -4,13 +4,13 @@ This project implements a MATLAB-based simulation framework for multizone sound 
 
 ## 1. Project Motivation
 개인 공간의 음장 제어는 과거부터 계속 되어온 관심사입니다. 이를 해결하기 위한 시도는 계속 발전되어왔습니다.
-그 중 기존의 음압 기반 제어(Pressure-point matching)은 제어점 사이의 빈 공간에서 음장이 심하게 왜곡되는 문제가 발생하며, 방 전체를 커버하는 글로벌 모달(Global Modal) 방식은 주파수가 높아질수록 연산량이 기하급수적으로 폭발하는 한계가 있습니다.
+그 중 기존의 음압 기반 제어(Pressure-point matching)은 제어점 사이의 빈 공간에서 음장이 심하게 왜곡되는 문제가 발생하며, 방 전체를 커버하는 글로벌 모달(Global Modal) 방식은 주파수가 높아질수록 연산량이 크게 늘어난다는 한계가 있습니다.
 
 본 프로젝트는 개인 공간이라는 점에 주목하여 이 한계를 극복하기 위해 방전체가 아닌 귀 주변의 좁은 영역(Local)으로 계산 구역을 좁히고, 모달 차수를 물리적 한계인 $N = \lceil kR \rceil$로 제한하여 연산량을 낮추면서도 안정적인 음장을 만들어내는 순수 Local modal 제어 시뮬레이터를 구현했습니다.
 나아가 현재 실제 공간에서의 측정 실험을 통해 실제 공간에서의 유효성을 판단하고자 합니다.
 
 ## 2. Methodology & Optimization Tactics
-본 시뮬레이션 다음 상황을 가정합니다.
+본 시뮬레이션은 다음 상황을 가정합니다.
   1. Direct-Path Acoustic Propagation modeled by Free-Field Green's Function
   2. First-Order Early Reflection Modeling via Image Source Method (ISM)
   3. Multizone Sound Field Control (SFC) based on Spatial Audio Reproduction
