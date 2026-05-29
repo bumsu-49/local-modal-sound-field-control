@@ -1,16 +1,4 @@
-%% ========================================================================
-% File: local_pressure_modal_hybrid_adaptive_cmp_multiband.m
-% GitHub-ready name for: Local-Pressure Modal Hybrid version
-% Description:
-%   Local-pressure/modal hybrid sound field control simulation.
-%   - Outer bright boundary: local modal domain
-%   - Inner bright region: pressure-point matching
-%   - Dark boundary: local modal domain
-%   - Adaptive modal order N = ceil(kR) with Bessel stability filtering
-%   - Uniform CMP-style output constraint
-% ========================================================================
 
-clear; clc; close all;
 
 %% ============================================================
 % local_modal_multiband_outermodal_inner4pressure_adaptive_ceil_uniform_cmp.m
