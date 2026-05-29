@@ -1,16 +1,4 @@
-%% ========================================================================
-% File: pure_local_modal_domain_adaptive_cmp_multiband.m
-% GitHub-ready name for: Pure Local Modal Domain version
-% Description:
-%   Pure local-modal-domain sound field control simulation.
-%   - Outer bright boundary: local modal domain
-%   - Inner bright boundary: local modal domain
-%   - Dark boundary: local modal domain
-%   - Adaptive modal order N = ceil(kR) with Bessel stability filtering
-%   - Uniform CMP-style output constraint
-% ========================================================================
 
-clear; clc; close all;
 
 %% ============================================================
 % local_modal_multiband_pure_local_modal_adaptive_ceil_uniform_cmp_phasecheck.m
@@ -46,8 +34,8 @@ clear; clc; close all;
 %% [1] 기본 물리 세팅
 c = 343;
 
-room.Lx = 3.8;
-room.Ly = 4.0;
+room.Lx = 9.2;
+room.Ly = 6.5;
 
 % 방 평균 흡음계수 가정
 room.alpha_wall = 0.7;
@@ -59,23 +47,23 @@ room.beta_wall = sqrt(1 - room.alpha_wall);
 room.refl = room.beta_wall * [1, 1, 1, 1];
 
 %% [2] 구역 설정
-bright.center = [1.9, 2.0];
+bright.center = [4.6, 2.75];
 bright.radius_outer = 0.10;
 bright.radius_inner = 0.05;
 
-dark.center = [1.9, 0.9];
+dark.center = [4.6, 5.9];
 dark.radius = 0.10;
 
 %% [3] 스피커 후보군 설정
 array.center = bright.center;
 array.radius = 1.2;
-anglesDeg = -30:4:210;
+anglesDeg = 30:-4:-210;
 
 nSelect = 4;
 
 %% [4] 알고리즘 파라미터
 lambda = 1e-5;
-darkPenalty = 4;
+darkPenalty = 2.5;
 
 % local modal block 가중치
 w_outer = 1.0;
@@ -829,6 +817,219 @@ plot(selPos(:,1), selPos(:,2), 'wo', 'MarkerFaceColor', 'k', 'MarkerSize', 5);
 title(sprintf('Gain-scaled reconstruction, g = %.2f', g_bright_real));
 hold off;
 
+
+
+%% [20.7] 추가 시각화: 대표 주파수별 결과 비교 (100/500/1000/1500/2000 Hz)
+% 기존 1500 Hz 전용 figure는 그대로 유지하고,
+% 아래에서는 대표 주파수 100, 500, 1000, 1500, 2000 Hz의 결과를 한 번에 비교한다.
+% 목적:
+%   1) 저주파/중주파/고주파에서 target vs reconstruction 경향 확인
+%   2) 각 주파수에서 wrapped phase error 확인
+%   3) global gain scaling이 단순 크기 부족 문제를 얼마나 보정하는지 확인
+
+repFreqCompareList = [100 500 1000 1500 2000];
+nRepCompare = numel(repFreqCompareList);
+
+repFreqRows = [];
+repFreqPhaseRows = [];
+
+figure('Color','w','Name','Representative Frequencies: Target / Raw / Gain-scaled SPL');
+tiledlayout(nRepCompare, 3, 'Padding','compact', 'TileSpacing','compact');
+
+figure('Color','w','Name','Representative Frequencies: Boundary Magnitude');
+tiledlayout(nRepCompare, 3, 'Padding','compact', 'TileSpacing','compact');
+
+figure('Color','w','Name','Representative Frequencies: Wrapped Phase Error');
+tiledlayout(nRepCompare, 2, 'Padding','compact', 'TileSpacing','compact');
+
+% inner 영역이 boundary인지 pressure point인지 자동 판별
+if exist('brightInnerPressurePts','var')
+    innerPtsForRep = brightInnerPressurePts;
+    innerXBase = 1:size(brightInnerPressurePts,1);
+    innerXLabel = 'Inner pressure point index';
+    innerTargetStyle = 'ko-';
+    innerRawStyle = 'rs--';
+    innerGainStyle = 'bd-.';
+else
+    innerPtsForRep = brightInnerPts;
+    innerXBase = theta_deg;
+    innerXLabel = 'Angle (deg)';
+    innerTargetStyle = 'k-';
+    innerRawStyle = 'r--';
+    innerGainStyle = 'b-.';
+end
+
+for rr = 1:nRepCompare
+    f_now = repFreqCompareList(rr);
+    [~, kk_now] = min(abs(fList - f_now));
+    f_now = fList(kk_now);
+    k_now = 2*pi*f_now/c;
+    q_now = q_all{kk_now};
+    spkModel_now = modalInfo{kk_now}.spkModel;
+
+    H_outer_now = zeros(size(brightOuterPts,1), nSelect);
+    H_inner_now = zeros(size(innerPtsForRep,1), nSelect);
+    H_dark_now  = zeros(size(darkBoundaryPts,1), nSelect);
+
+    for ii = 1:nSelect
+        H_outer_now(:,ii) = reflected_directional_transfer(brightOuterPts, candidates(selected(ii)), k_now, spkModel_now, room);
+        H_inner_now(:,ii) = reflected_directional_transfer(innerPtsForRep, candidates(selected(ii)), k_now, spkModel_now, room);
+        H_dark_now(:,ii)  = reflected_directional_transfer(darkBoundaryPts, candidates(selected(ii)), k_now, spkModel_now, room);
+    end
+
+    P_outer_now = H_outer_now * q_now;
+    P_inner_now = H_inner_now * q_now;
+    P_dark_now  = H_dark_now  * q_now;
+
+    d_outer_now = targetData{kk_now}.d_outer;
+    d_inner_now = targetData{kk_now}.d_inner;
+
+    brightTarget_now = [d_outer_now; d_inner_now];
+    brightRecon_now  = [P_outer_now; P_inner_now];
+    gainDen_now = real(brightRecon_now' * brightRecon_now) + 1e-15;
+    g_now = real(brightRecon_now' * brightTarget_now) / gainDen_now;
+    g_now = max(g_now, 0);
+
+    P_outer_gain_now = g_now * P_outer_now;
+    P_inner_gain_now = g_now * P_inner_now;
+    P_dark_gain_now  = g_now * P_dark_now;
+
+    Pgrid_now = zeros(size(gridPts,1), 1);
+    for ii = 1:nSelect
+        Pgrid_now = Pgrid_now + q_now(ii) * reflected_directional_transfer(gridPts, candidates(selected(ii)), k_now, spkModel_now, room);
+    end
+    Pgrid_gain_now = g_now * Pgrid_now;
+
+    Ptarget_now = point_source_sum(gridPts, virtual_source_L, virtual_source_R, k_now) / targetData{kk_now}.targetScale;
+    Ptarget2D_now = reshape(abs(Ptarget_now), Ny, Nx);
+    Praw2D_now = reshape(abs(Pgrid_now), Ny, Nx);
+    Pgain2D_now = reshape(abs(Pgrid_gain_now), Ny, Nx);
+
+    P_ref_now = mean(abs(Ptarget_now));
+    Ptarget_dB_now = 20*log10(Ptarget2D_now/(P_ref_now + 1e-12) + 1e-12);
+    Praw_dB_now    = 20*log10(Praw2D_now/(P_ref_now + 1e-12) + 1e-12);
+    Pgain_dB_now   = 20*log10(Pgain2D_now/(P_ref_now + 1e-12) + 1e-12);
+
+    figure(findobj('Name','Representative Frequencies: Target / Raw / Gain-scaled SPL'));
+    nexttile;
+    imagesc(xv, yv, Ptarget_dB_now);
+    axis xy equal tight; colorbar; colormap turbo; caxis([-25 5]);
+    hold on;
+    draw_circle(bright.center, bright.radius_outer, [1 1 1], 1.2);
+    draw_circle(bright.center, bright.radius_inner, [1 1 1], 1.0);
+    draw_circle(dark.center, dark.radius, [1 1 1], 1.2);
+    title(sprintf('Target @ %d Hz', f_now));
+    hold off;
+
+    nexttile;
+    imagesc(xv, yv, Praw_dB_now);
+    axis xy equal tight; colorbar; colormap turbo; caxis([-25 5]);
+    hold on;
+    draw_circle(bright.center, bright.radius_outer, [1 1 1], 1.2);
+    draw_circle(bright.center, bright.radius_inner, [1 1 1], 1.0);
+    draw_circle(dark.center, dark.radius, [1 1 1], 1.2);
+    plot(selPos(:,1), selPos(:,2), 'wo', 'MarkerFaceColor','k', 'MarkerSize', 4);
+    title(sprintf('Raw recon @ %d Hz', f_now));
+    hold off;
+
+    nexttile;
+    imagesc(xv, yv, Pgain_dB_now);
+    axis xy equal tight; colorbar; colormap turbo; caxis([-25 5]);
+    hold on;
+    draw_circle(bright.center, bright.radius_outer, [1 1 1], 1.2);
+    draw_circle(bright.center, bright.radius_inner, [1 1 1], 1.0);
+    draw_circle(dark.center, dark.radius, [1 1 1], 1.2);
+    plot(selPos(:,1), selPos(:,2), 'wo', 'MarkerFaceColor','k', 'MarkerSize', 4);
+    title(sprintf('Gain-scaled @ %d Hz, g=%.2f', f_now, g_now));
+    hold off;
+
+    figure(findobj('Name','Representative Frequencies: Boundary Magnitude'));
+    nexttile;
+    plot(theta_deg, abs(d_outer_now), 'k-', 'LineWidth', 1.8); hold on;
+    plot(theta_deg, abs(P_outer_now), 'r--', 'LineWidth', 1.4);
+    plot(theta_deg, abs(P_outer_gain_now), 'b-.', 'LineWidth', 1.5);
+    grid on; xlabel('Angle (deg)'); ylabel('|P|');
+    title(sprintf('Outer mag @ %d Hz', f_now));
+    legend('Target','Raw','Gain','Location','best');
+    hold off;
+
+    nexttile;
+    plot(innerXBase, abs(d_inner_now), innerTargetStyle, 'LineWidth', 1.8); hold on;
+    plot(innerXBase, abs(P_inner_now), innerRawStyle, 'LineWidth', 1.4);
+    plot(innerXBase, abs(P_inner_gain_now), innerGainStyle, 'LineWidth', 1.5);
+    grid on; xlabel(innerXLabel); ylabel('|P|');
+    title(sprintf('Inner mag @ %d Hz', f_now));
+    legend('Target','Raw','Gain','Location','best');
+    hold off;
+
+    nexttile;
+    plot(theta_deg, abs(P_dark_now), 'r--', 'LineWidth', 1.4); hold on;
+    plot(theta_deg, abs(P_dark_gain_now), 'b-.', 'LineWidth', 1.5);
+    grid on; xlabel('Angle (deg)'); ylabel('|P|');
+    title(sprintf('Dark mag @ %d Hz', f_now));
+    legend('Raw dark','Gain dark','Location','best');
+    hold off;
+
+    phaseErr_outer_now = angle(exp(1i*(angle(P_outer_now) - angle(d_outer_now))));
+    phaseErr_inner_now = angle(exp(1i*(angle(P_inner_now) - angle(d_inner_now))));
+
+    phaseOuterRMS_now = sqrt(mean(phaseErr_outer_now.^2));
+    phaseInnerRMS_now = sqrt(mean(phaseErr_inner_now.^2));
+    phaseOuterMax_now = max(abs(phaseErr_outer_now));
+    phaseInnerMax_now = max(abs(phaseErr_inner_now));
+
+    figure(findobj('Name','Representative Frequencies: Wrapped Phase Error'));
+    nexttile;
+    plot(theta_deg, phaseErr_outer_now, 'b-', 'LineWidth', 1.5); hold on;
+    yline(0, 'k--'); yline(pi, 'r:'); yline(-pi, 'r:');
+    grid on; ylim([-pi pi]); xlabel('Angle (deg)'); ylabel('rad');
+    title(sprintf('Outer phase err @ %d Hz', f_now));
+    hold off;
+
+    nexttile;
+    plot(innerXBase, phaseErr_inner_now, 'b-', 'LineWidth', 1.5); hold on;
+    yline(0, 'k--'); yline(pi, 'r:'); yline(-pi, 'r:');
+    grid on; ylim([-pi pi]); xlabel(innerXLabel); ylabel('rad');
+    title(sprintf('Inner phase err @ %d Hz', f_now));
+    hold off;
+
+    outerRawNMSE_now = 10*log10(norm(P_outer_now - d_outer_now)^2/(norm(d_outer_now)^2 + 1e-15));
+    outerGainNMSE_now = 10*log10(norm(P_outer_gain_now - d_outer_now)^2/(norm(d_outer_now)^2 + 1e-15));
+    innerRawNMSE_now = 10*log10(norm(P_inner_now - d_inner_now)^2/(norm(d_inner_now)^2 + 1e-15));
+    innerGainNMSE_now = 10*log10(norm(P_inner_gain_now - d_inner_now)^2/(norm(d_inner_now)^2 + 1e-15));
+
+    brightRawEnergy_now = 0.5*(mean(abs(P_outer_now).^2) + mean(abs(P_inner_now).^2));
+    brightGainEnergy_now = 0.5*(mean(abs(P_outer_gain_now).^2) + mean(abs(P_inner_gain_now).^2));
+    darkRawEnergy_now = mean(abs(P_dark_now).^2);
+    darkGainEnergy_now = mean(abs(P_dark_gain_now).^2);
+    contrastRaw_now = 10*log10((brightRawEnergy_now + 1e-15)/(darkRawEnergy_now + 1e-15));
+    contrastGain_now = 10*log10((brightGainEnergy_now + 1e-15)/(darkGainEnergy_now + 1e-15));
+    darkRaw_dB_now = 10*log10(darkRawEnergy_now + 1e-15);
+    darkGain_dB_now = 10*log10(darkGainEnergy_now + 1e-15);
+
+    repFreqRows = [repFreqRows; ... %#ok<AGROW>
+        f_now, g_now, outerRawNMSE_now, outerGainNMSE_now, innerRawNMSE_now, innerGainNMSE_now, ...
+        darkRaw_dB_now, darkGain_dB_now, contrastRaw_now, contrastGain_now];
+
+    repFreqPhaseRows = [repFreqPhaseRows; ... %#ok<AGROW>
+        f_now, phaseOuterRMS_now, phaseOuterMax_now, phaseInnerRMS_now, phaseInnerMax_now];
+end
+
+repFreqGainSummaryTbl = array2table(repFreqRows, ...
+    'VariableNames', {'FreqHz','Gain','OuterRawNMSE_dB','OuterGainNMSE_dB', ...
+    'InnerRawNMSE_dB','InnerGainNMSE_dB','DarkRawEnergy_dB','DarkGainEnergy_dB', ...
+    'ContrastRaw_dB','ContrastGain_dB'});
+
+repFreqPhaseSummaryTbl = array2table(repFreqPhaseRows, ...
+    'VariableNames', {'FreqHz','OuterPhaseRMS_rad','OuterPhaseMax_rad', ...
+    'InnerPhaseRMS_rad','InnerPhaseMax_rad'});
+
+fprintf('\n================ 대표 주파수 gain scaling summary ================\n');
+disp(repFreqGainSummaryTbl);
+
+fprintf('\n================ 대표 주파수 wrapped phase error summary ================\n');
+disp(repFreqPhaseSummaryTbl);
+
 %% [21] 시각화: 1500 Hz 실수부
 figure('Color','w','Name','Real Part at 1500 Hz');
 imagesc(xv, yv, Preal2D);
@@ -842,16 +1043,17 @@ title(sprintf('Real part Re{P(x,y)} @ %d Hz', f_rep));
 hold off;
 
 %% [22] 결과 저장
-save('pure_local_modal_adaptive_ceil_uniform_cmp_phasecheck_gaincheck_result.mat', ...
+save('pure_local_modal_adaptive_ceil_uniform_cmp_phasecheck_gaincheck_multirep_2000_result.mat', ...
     'selected', 'q_all', 'summaryTbl', 'qSafe_effective', 'qSafeSummaryTbl', ...
     'qSafe_uniform_value', 'qSafe_equivalent_Pmax', 'modalOrder', ...
     'candidates', 'fList', 'bright', 'dark', 'targetData', 'modalInfo', ...
     'numModes_outer', 'numModes_inner', 'numModes_dark', 'modalOrderSummaryTbl', ...
     'phaseErrSummaryTbl', 'phaseErr_outer_rep', 'phaseErr_inner_rep', ...
     'gainInfoTbl', 'gainScaleSummaryTbl', 'g_bright_real', 'alpha_bright_complex', ...
+    'repFreqCompareList', 'repFreqGainSummaryTbl', 'repFreqPhaseSummaryTbl', ...
     'P_outer_gain_rep', 'P_inner_gain_rep', 'P_dark_gain_rep');
 
-fprintf('\n결과 저장 완료: pure_local_modal_adaptive_ceil_uniform_cmp_phasecheck_gaincheck_result.mat\n');
+fprintf('\n결과 저장 완료: pure_local_modal_adaptive_ceil_uniform_cmp_phasecheck_gaincheck_multirep_2000_result.mat\n');
 
 %% ============================================================
 %% 로컬 함수
