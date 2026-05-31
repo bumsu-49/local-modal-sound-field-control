@@ -44,7 +44,7 @@ The simulation compares target, raw reconstruction, and gain-scaled reconstructi
 
 <img width="1055" height="774" alt="image" src="https://github.com/user-attachments/assets/d0ee1e9b-ed0b-4cc1-a8f4-8dd13848cf36" />
 
-<img width="1919" height="870" alt="image" src="https://github.com/user-attachments/assets/67a24a83-8210-4eb9-b022-7d097a449460" />
+<img width="2112" height="1245" alt="image" src="https://github.com/user-attachments/assets/2ee3eb1d-d42e-40d6-ada3-843a67a8cd2b" />
 
 The pure local modal-domain method directly matches local modal coefficients for the bright and dark zones.
 
@@ -52,7 +52,7 @@ The pure local modal-domain method directly matches local modal coefficients for
 
 <img width="1200" height="816" alt="image" src="https://github.com/user-attachments/assets/c67bad2a-ed97-4e5e-9be2-ed88bb725fb9" />
 
-<img width="1919" height="866" alt="image" src="https://github.com/user-attachments/assets/ae351921-0463-4884-b246-cecac95f2ac4" />
+<img width="2107" height="1235" alt="image" src="https://github.com/user-attachments/assets/d4f46cb6-0106-488e-bc03-de8ac856501e" />
 
 The local-pressure modal hybrid method replaces the inner bright boundary with four pressure control points while maintaining local modal matching for the outer bright boundary and dark zone.
 
